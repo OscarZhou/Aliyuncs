@@ -7,5 +7,4 @@ type SMSParam struct {
 	Param          map[string]string
 	ReceiverNumber string
 	TemplateCode   string
-	ExtraParam     map[string]interface{}
 }

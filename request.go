@@ -1,13 +1,19 @@
 package Aliyuncs
 
 import (
-	"reflect"
-	"io/ioutil"
 	"bytes"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
+	"reflect"
 )
+
+type Request interface {
+	DoRequest(method, url string, body []byte, object interface{}) (int, error)
+}
 
 func DoRequest(method, url string, body []byte, object interface{}) (int, error) {
 	var reader io.Reader
@@ -19,10 +25,11 @@ func DoRequest(method, url string, body []byte, object interface{}) (int, error)
 			return 411, errors.New("Length required: body. ")
 		}
 		reader = bytes.NewReader(body)
-	case default:
+	default:
 		return 400, errors.New("http method invalid. ")
 	}
 
+	fmt.Println(reader)
 	req, err := http.NewRequest(method, url, reader)
 	if err != nil {
 		return 500, errors.New("Internal server error")
@@ -32,7 +39,6 @@ func DoRequest(method, url string, body []byte, object interface{}) (int, error)
 	req.Header.Add("Connection", "close")
 
 	resp, err := http.DefaultClient.Do(req)
-	defer resp.Body.Close()
 	if resp == nil {
 		return 500, errors.New("Internal server error. return null. ")
 	}
@@ -41,21 +47,24 @@ func DoRequest(method, url string, body []byte, object interface{}) (int, error)
 		return resp.StatusCode, errors.New(resp.Status)
 	}
 
-	if resp.StatusCode >400 && resp.StatusCode < 200{
-		return resp.StatusCode, errors.New(resp.Status) 
-	}
-
-	respBody, err := ioutil.ReadAll(io.Reader(resp.Body))
-	if err != nil{
+	defer resp.Body.Close()
+	if resp.StatusCode > 300 && resp.StatusCode < 200 {
 		return resp.StatusCode, errors.New(resp.Status)
 	}
 
-	if !reflect.ValueOf(object).IsValid(){
+	respBody, err := ioutil.ReadAll(io.Reader(resp.Body))
+	if err != nil {
+		return resp.StatusCode, errors.New(resp.Status)
+	}
+
+	fmt.Println(string(respBody))
+
+	if !reflect.ValueOf(object).IsValid() {
 		return 400, errors.New("the object is invalid ")
 	}
 
 	err = json.Unmarshal(respBody, object)
-	if err != nil{
+	if err != nil {
 		return 500, errors.New("Unmarshal error")
 	}
 
