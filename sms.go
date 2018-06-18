@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+	"strconv"
 	"time"
 )
 
@@ -66,38 +67,59 @@ func (sms *SMS) SendSMS() (int, error) {
 func (sms *SMS) Sign() error {
 	var keys []string
 
-	s := reflect.ValueOf(sms.PublicParam)
-	if s.IsValid() && s.Kind() == reflect.Struct {
-		for i := 0; i < s.NumField(); i++ {
-			if s.Field(i).Kind() == reflect.String {
-				if s.Field(i).String() == "" {
-					continue
-				}
-			}
-			keys = append(keys, s.Type().Field(i).Name)
-		}
+	k, err := sms.PublicParam.ExtractKeys()
+	if err != nil {
+		return err
 	}
 
-	s = reflect.ValueOf(sms.SMSParam)
-	if s.IsValid() && s.Kind() == reflect.Struct {
-		for i := 0; i < s.NumField(); i++ {
-			if s.Field(i).Kind() == reflect.String {
-				if s.Field(i).String() == "" {
-					continue
-				}
-			}
-
-			if s.Field(i).Kind() == reflect.Map {
-				if s.Field(i).IsNil() {
-					continue
-				}
-			}
-			keys = append(keys, s.Type().Field(i).Name)
-		}
+	keys = append(keys, k...)
+	k, err = sms.SMSParam.ExtractKeys()
+	if err != nil {
+		return err
 	}
-
+	keys = append(keys, k...)
 	sort.Strings(keys)
 
-	fmt.Println(keys)
+	keyMap := make(map[string]bool)
+	for _, v := range keys {
+		keyMap[v] = true
+	}
+	// var plainText []string
+
+	// for _, v:=range keys{
+
+	// 	switch reflect.ValueOf(sms.).Kind(){
+	// 	case reflect.String:
+	// 	case reflect.Map:
+	// 	case reflect.Bool:
+	// 	}
+	// }
+
+	paramMap := make(map[string]string)
+	pp := reflect.ValueOf(sms.PublicParam)
+	if pp.IsValid() {
+		for i := 0; i < pp.NumField(); i++ {
+			fmt.Println(pp.Type().Field(i).Name)
+			_, ok := keyMap[pp.Type().Field(i).Name]
+			if !ok {
+				continue
+			}
+			switch pp.Field(i).Kind() {
+			case reflect.String:
+				paramMap[pp.Type().Field(i).Name] = pp.Field(i).String()
+			case reflect.Bool:
+				paramMap[pp.Type().Field(i).Name] = strconv.FormatBool(pp.Field(i).Bool())
+			case reflect.Map:
+				v, err := json.Marshal(pp.Field(i))
+				if err != nil {
+					return err
+				}
+				paramMap[pp.Type().Field(i).Name] = string(v)
+			}
+		}
+	}
+
+	fmt.Println(paramMap)
+
 	return nil
 }
