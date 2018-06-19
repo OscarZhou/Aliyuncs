@@ -66,18 +66,18 @@ func (sms *SMS) SendSMS() (int, error) {
 
 func (sms *SMS) Sign() error {
 	var keys []string
-
-	k, err := sms.PublicParam.ExtractKeys()
-	if err != nil {
-		return err
-	}
-
-	keys = append(keys, k...)
-	k, err = sms.SMSParam.ExtractKeys()
+	k, err := ExtractKeys(sms.PublicParam)
 	if err != nil {
 		return err
 	}
 	keys = append(keys, k...)
+
+	k, err = ExtractKeys(sms.SMSParam)
+	if err != nil {
+		return err
+	}
+	keys = append(keys, k...)
+
 	sort.Strings(keys)
 
 	keyMap := make(map[string]bool)
@@ -94,12 +94,60 @@ func (sms *SMS) Sign() error {
 	// 	case reflect.Bool:
 	// 	}
 	// }
-
 	paramMap := make(map[string]string)
-	pp := reflect.ValueOf(sms.PublicParam)
+	pMap, err := GenerateMap(sms.PublicParam, keyMap)
+	if err != nil {
+		return err
+	}
+
+	for k, v := range pMap {
+		paramMap[k] = v
+	}
+
+	pMap, err = GenerateMap(sms.SMSParam, keyMap)
+	if err != nil {
+		return err
+	}
+
+	for k, v := range pMap {
+		paramMap[k] = v
+	}
+
+	fmt.Println(paramMap)
+
+	return nil
+}
+
+func ExtractKeys(params interface{}) ([]string, error) {
+	var keys []string
+	s := reflect.ValueOf(params)
+	if s.IsValid() && s.Kind() == reflect.Struct {
+		for i := 0; i < s.NumField(); i++ {
+			if s.Field(i).Kind() == reflect.String {
+				if s.Field(i).String() == "" {
+					continue
+				}
+			}
+
+			if s.Field(i).Kind() == reflect.Map {
+				if s.Field(i).IsNil() {
+					continue
+				}
+			}
+			keys = append(keys, s.Type().Field(i).Name)
+		}
+	} else {
+		return nil, errors.New("param is invalid")
+	}
+
+	return keys, nil
+}
+
+func GenerateMap(params interface{}, keyMap map[string]bool) (map[string]string, error) {
+	paramMap := make(map[string]string)
+	pp := reflect.ValueOf(params)
 	if pp.IsValid() {
 		for i := 0; i < pp.NumField(); i++ {
-			fmt.Println(pp.Type().Field(i).Name)
 			_, ok := keyMap[pp.Type().Field(i).Name]
 			if !ok {
 				continue
@@ -110,16 +158,20 @@ func (sms *SMS) Sign() error {
 			case reflect.Bool:
 				paramMap[pp.Type().Field(i).Name] = strconv.FormatBool(pp.Field(i).Bool())
 			case reflect.Map:
-				v, err := json.Marshal(pp.Field(i))
+				m, ok := pp.Field(i).Interface().(map[string]string)
+				if !ok {
+					return nil, errors.New("assert failure")
+				}
+				v, err := json.Marshal(m)
 				if err != nil {
-					return err
+					return nil, err
 				}
 				paramMap[pp.Type().Field(i).Name] = string(v)
 			}
 		}
+	} else {
+		return nil, errors.New("params is invalid")
 	}
 
-	fmt.Println(paramMap)
-
-	return nil
+	return paramMap, nil
 }
