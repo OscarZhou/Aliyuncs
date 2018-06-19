@@ -1,9 +1,12 @@
 package Aliyuncs
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"reflect"
 	"sort"
 	"strconv"
@@ -64,6 +67,39 @@ func (sms *SMS) SendSMS() (int, error) {
 	return 200, nil
 }
 
+func (sms *SMS) SignTopRequest(paramMap map[string]string, secret, signMethod string) (string, error) {
+	var (
+		keys      []string
+		encrypted []byte
+		err       error
+	)
+	for k, _ := range paramMap {
+		keys = append(keys, k)
+	}
+
+	sort.Strings(keys)
+
+	query := ""
+	if signMethod == "md5" {
+		query += secret
+	}
+	for _, k := range keys {
+		query += k
+		query += paramMap[k]
+	}
+
+	if signMethod == "hmac" {
+
+	} else {
+		query += secret
+		encrypted, err = encryptMD5(query)
+		if err != nil {
+			return "", err
+		}
+	}
+	return hex.EncodeToString(encrypted), nil
+}
+
 func (sms *SMS) Sign() error {
 	var keys []string
 	k, err := ExtractKeys(sms.PublicParam)
@@ -84,16 +120,7 @@ func (sms *SMS) Sign() error {
 	for _, v := range keys {
 		keyMap[v] = true
 	}
-	// var plainText []string
 
-	// for _, v:=range keys{
-
-	// 	switch reflect.ValueOf(sms.).Kind(){
-	// 	case reflect.String:
-	// 	case reflect.Map:
-	// 	case reflect.Bool:
-	// 	}
-	// }
 	paramMap := make(map[string]string)
 	pMap, err := GenerateMap(sms.PublicParam, keyMap)
 	if err != nil {
@@ -111,6 +138,19 @@ func (sms *SMS) Sign() error {
 
 	for k, v := range pMap {
 		paramMap[k] = v
+	}
+
+	plainText := sms.APPSecret
+	for _, k := range keys {
+		v, ok := paramMap[k]
+		if ok {
+			plainText += k
+			plainText += v
+		}
+	}
+	plainText += sms.APPSecret
+	if sms.PublicParam.SignMethod == "md5" {
+
 	}
 
 	fmt.Println(paramMap)
@@ -174,4 +214,18 @@ func GenerateMap(params interface{}, keyMap map[string]bool) (map[string]string,
 	}
 
 	return paramMap, nil
+}
+
+func encryptMD5(plainText string) ([]byte, error) {
+	if plainText == "" {
+		return nil, errors.New("plain text can not be empty")
+	}
+
+	h := md5.New()
+	io.WriteString(h, plainText)
+	return h.Sum(nil), nil
+}
+
+func encryptHMAC(plainText, secret string) ([]byte, error) {
+	return nil, nil
 }
