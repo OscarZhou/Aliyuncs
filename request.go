@@ -26,7 +26,7 @@ func DoRequest(method, url string, body []byte) (int, error) {
 	if err != nil {
 		return 500, errors.New("Internal server error")
 	}
-	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
 	resp, err := http.DefaultClient.Do(req)
 	if resp == nil {
@@ -46,6 +46,5 @@ func DoRequest(method, url string, body []byte) (int, error) {
 	if err != nil {
 		return resp.StatusCode, errors.New(resp.Status + "," + string(respBody))
 	}
-
 	return resp.StatusCode, nil
 }

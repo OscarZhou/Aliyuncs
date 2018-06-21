@@ -1,8 +1,9 @@
 package Aliyuncs
 
 import (
-	"encoding/json"
 	"errors"
+	"net/url"
+	"strings"
 	"time"
 )
 
@@ -25,7 +26,7 @@ func NewSMS(config SMSConfig) (*SMS, error) {
 		TemplateCode:   config.TemplateCode,
 		Method:         "alibaba.aliqin.fc.sms.num.send",
 		APPKey:         config.APPKey,
-		TimeStamp:      time.Now().Format("2016-01-01 12:00:00"),
+		TimeStamp:      time.Now().Format("2006-01-02 15:04:05"),
 		SignMethod:     "md5",
 		Format:         "json",
 		V:              "2.0",
@@ -41,25 +42,21 @@ func NewSMS(config SMSConfig) (*SMS, error) {
 func (sms *SMS) SendSMS() (int, error) {
 	url := "https://eco.taobao.com/router/rest"
 
-	err := sms.SignParams()
+	body, err := sms.GetURLQuery()
 	if err != nil {
 		return 500, err
 	}
 
-	body, err := json.Marshal(sms.SMSParam)
-	if err != nil {
-		return 500, err
-	}
-	return DoRequest("POST", url, body)
+	return DoRequest("POST", url, []byte(body))
 }
 
 // Sign generates the body that the http request needs
-func (sms *SMS) SignParams() error {
+func (sms *SMS) GetURLQuery() (string, error) {
 	var keys []string
 
 	k, err := ExtractNotNullKeys(sms.SMSParam)
 	if err != nil {
-		return err
+		return "", err
 	}
 	keys = append(keys, k...)
 
@@ -70,11 +67,17 @@ func (sms *SMS) SignParams() error {
 
 	pMap, err := GenerateMap(sms.SMSParam, keyMap)
 	if err != nil {
-		return err
+		return "", err
 	}
 	sms.SMSParam.Sign, err = SignTopRequest(pMap, sms.APPSecret, sms.SMSParam.SignMethod)
 	if err != nil {
-		return err
+		return "", err
 	}
-	return nil
+
+	params := url.Values{}
+	params.Set("sign", strings.ToUpper(sms.SMSParam.Sign))
+	for k, v := range pMap {
+		params.Set(k, v)
+	}
+	return params.Encode(), nil
 }

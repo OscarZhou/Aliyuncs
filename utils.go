@@ -85,9 +85,9 @@ func GenerateMap(params interface{}, keyMap map[string]bool) (map[string]string,
 			}
 			switch pp.Field(i).Kind() {
 			case reflect.String:
-				paramMap[pp.Type().Field(i).Name] = pp.Field(i).String()
+				paramMap[pp.Type().Field(i).Tag.Get("json")] = pp.Field(i).String()
 			case reflect.Bool:
-				paramMap[pp.Type().Field(i).Name] = strconv.FormatBool(pp.Field(i).Bool())
+				paramMap[pp.Type().Field(i).Tag.Get("json")] = strconv.FormatBool(pp.Field(i).Bool())
 			case reflect.Map:
 				m, ok := pp.Field(i).Interface().(map[string]string)
 				if !ok {
@@ -97,7 +97,7 @@ func GenerateMap(params interface{}, keyMap map[string]bool) (map[string]string,
 				if err != nil {
 					return nil, err
 				}
-				paramMap[pp.Type().Field(i).Name] = string(v)
+				paramMap[pp.Type().Field(i).Tag.Get("json")] = string(v)
 			}
 		}
 	} else {
