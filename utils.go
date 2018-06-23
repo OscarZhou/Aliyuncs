@@ -11,8 +11,7 @@ import (
 	"strings"
 )
 
-// ExtractNotNullKeys gets the names of the struct variables
-// whose values are not null.
+// GenerateSignRequestString generates signature string
 func GenerateSignRequestString(params interface{}) (string, error) {
 	var keys []string
 	s := reflect.ValueOf(params)
@@ -23,14 +22,14 @@ func GenerateSignRequestString(params interface{}) (string, error) {
 					continue
 				}
 			}
-			keys = append(keys, s.Type().Field(i).Name)
+
+			keys = append(keys, s.Type().Field(i).Tag.Get("json"))
 		}
 	} else {
 		return "", errors.New("param is invalid")
 	}
 
 	sort.Strings(keys)
-
 	keyMap := make(map[string]bool)
 	for _, v := range keys {
 		keyMap[v] = true
@@ -38,38 +37,41 @@ func GenerateSignRequestString(params interface{}) (string, error) {
 
 	paramMap := make(map[string]string)
 	for i := 0; i < s.NumField(); i++ {
-		_, ok := keyMap[s.Type().Field(i).Name]
+		_, ok := keyMap[s.Type().Field(i).Tag.Get("json")]
 		if !ok {
 			continue
 		}
 
 		if s.Field(i).Kind() == reflect.String {
-			paramMap[s.Type().Field(i).Name] = s.Field(i).String()
+			paramMap[s.Type().Field(i).Tag.Get("json")] = s.Field(i).String()
 		}
 	}
+
 	sortedQueryString := ""
 	for _, k := range keys {
 		sortedQueryString += "&"
-		sortedQueryString += specialUrlEncode(k)
+		sortedQueryString += SpecialURLEncode(k)
 		sortedQueryString += "="
-		sortedQueryString += specialUrlEncode(paramMap[k])
+		sortedQueryString += SpecialURLEncode(paramMap[k])
 
 	}
-
 	return sortedQueryString, nil
 }
 
-func specialUrlEncode(src string) string {
+// SpecialURLEncode encodes the string with the rule of
+// the special URL encode of Aliyun
+func SpecialURLEncode(src string) string {
 	dst := url.QueryEscape(src)
 	dst = strings.Replace(dst, "+", "%20", -1)
 	dst = strings.Replace(dst, "*", "%2A", -1)
 	return strings.Replace(dst, "%7E", "~", -1)
 }
 
+// EncryptHmacSha1 encrypts the string with HMAC-SHA1 algorithm
 func EncryptHmacSha1(message, secret string) string {
 	mac := hmac.New(sha1.New, []byte(secret+"&"))
 	mac.Write([]byte(message))
 
 	s := base64.StdEncoding.EncodeToString(mac.Sum(nil))
-	return specialUrlEncode(s)
+	return SpecialURLEncode(s)
 }

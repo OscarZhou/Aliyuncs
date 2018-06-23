@@ -1,19 +1,20 @@
 package Aliyuncs
 
+// SmsParam contains system and business parameters
 type SmsParam struct {
-	AccessKeyId      string
-	Timestamp        string
-	Format           string
-	SignatureMethod  string
-	SignatureVersion string
-	SignatureNonce   string
-	Signature        string
-	Action           string
-	Version          string
-	RegionID         string
-	PhoneNumbers     string
-	SignName         string
-	TemplateCode     string
-	TemplateParam    string
-	OutID            string
+	AccessKeyID      string `json:"AccessKeyId"`
+	Timestamp        string `json:"Timestamp"`
+	Format           string `json:"Format"`
+	SignatureMethod  string `json:"SignatureMethod"`
+	SignatureVersion string `json:"SignatureVersion"`
+	SignatureNonce   string `json:"SignatureNonce"`
+	Signature        string `json:"Signature"`
+	Action           string `json:"Action"`
+	Version          string `json:"Version"`
+	RegionID         string `json:"RegionID"`
+	PhoneNumbers     string `json:"PhoneNumbers"`
+	SignName         string `json:"SignName"`
+	TemplateCode     string `json:"TemplateCode"`
+	TemplateParam    string `json:"TemplateParam"`
+	OutID            string `json:"OutID"`
 }

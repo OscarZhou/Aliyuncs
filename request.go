@@ -8,6 +8,7 @@ import (
 	"net/http"
 )
 
+// DoRequest sends http request
 func DoRequest(method, url string, body []byte) (int, error) {
 	var reader io.Reader
 	switch method {
