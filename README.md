@@ -4,10 +4,10 @@ Alibaba cloud communication system Golang SDK - Go 语言开源阿里云通讯SD
 
 **To-do list:**  
 
-:white_check_mark: 短信发送（包括群发，群发上限为1000）
-:black_square_button: 短信查询
-:black_square_button: 语音
-:black_square_button: 流量
+:white_check_mark: 短信发送(包括群发，群发上限为1000)  
+:black_square_button: 短信查询  
+:black_square_button: 语音  
+:black_square_button: 流量  
 
 
 
@@ -48,5 +48,8 @@ $ go get github.com/OscarZhou/Aliyuncs
 
  ```
 
+**可能出现的问题**  
+
+1. 如果此前有使用"github.com/satori/go.uuid"库，请更新到最新版本
 
  *类似SDK:* [阿里大于](https://github.com/OscarZhou/Alidayu)
