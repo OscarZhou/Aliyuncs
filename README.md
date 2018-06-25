@@ -2,7 +2,13 @@
 
 Alibaba cloud communication system Golang SDK - Go 语言开源阿里云通讯SDK
 
-The current version implements the sms sending function.  
+**To-do list:**  
+
+:white_check_mark: 短信发送（包括群发，群发上限为1000）
+:black_square_button: 短信查询
+:black_square_button: 语音
+:black_square_button: 流量
+
 
 
 
@@ -23,19 +29,21 @@ $ go get github.com/OscarZhou/Aliyuncs
 	smsConfig := SmsConfig{
 		AccessKeyID:     "",
 		AccessKeySecret: "",
-		PhoneNumbers:    "15000000000",
+		PhoneNumbers:    []string{"15000000000", "15000000001"},
 		SignName:        "云通信(短信签名)",
 		TemplateCode:    "SMS_0000(短信模板ID)",
 		TemplateParam:   `{"code":"1234","product":"ytx"}`,
 	}
 	sms, err := NewSms(smsConfig)
 	if err != nil {
-		t.Error(err)
+		fmt.Errorf(err)
 	}
 
 	statusCode, err := sms.SendSms()
 	if err != nil {
-		t.Errorf("status code is %d, error is %s\n", statusCode, err)
+		fmt.Errorf("status code: %d, error: %s\n", statusCode, err.Error())
+		fmt.Errorf("Aliyun error code: %s, description: %s\n", sms.SmsReturnStatus.Code, sms.SmsReturnStatus.Message)
+		fmt.Errorf("code description: %s\n", sms.SmsReturnStatus.LookupCode())
 	}
 
  ```

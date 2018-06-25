@@ -14,12 +14,13 @@ type Sms struct {
 	AccessKeyID     string `json:"AccessKeyId"`
 	AccessKeySecret string `json:"AccessKeySecret"`
 	SmsParam        SmsParam
+	SmsReturnStatus SmsReturnStatus
 }
 
 // NewSms creates a sms handler
 func NewSms(config SmsConfig) (*Sms, error) {
 	if config.AccessKeyID == "" || config.AccessKeySecret == "" ||
-		config.PhoneNumbers == "" || config.SignName == "" ||
+		len(config.PhoneNumbers) == 0 || config.SignName == "" ||
 		config.TemplateCode == "" {
 		return nil, errors.New("Missing configuration parameters")
 	}
@@ -52,6 +53,7 @@ func NewSms(config SmsConfig) (*Sms, error) {
 		AccessKeyID:     config.AccessKeyID,
 		AccessKeySecret: config.AccessKeySecret,
 		SmsParam:        smsParam,
+		SmsReturnStatus: SmsReturnStatus{},
 	}
 	return sms, nil
 }
@@ -65,5 +67,5 @@ func (sms *Sms) SendSms() (int, error) {
 	stringToSign := "GET&" + SpecialURLEncode("/") + "&" + SpecialURLEncode(sortedQueryString[1:])
 	sms.SmsParam.Signature = EncryptHmacSha1(stringToSign, sms.AccessKeySecret)
 	url := "http://" + sms.Domain + "/?Signature=" + sms.SmsParam.Signature + sortedQueryString
-	return DoRequest("GET", url, nil)
+	return DoRequest("GET", url, nil, &sms.SmsReturnStatus)
 }

@@ -22,7 +22,6 @@ func GenerateSignRequestString(params interface{}) (string, error) {
 					continue
 				}
 			}
-
 			keys = append(keys, s.Type().Field(i).Tag.Get("json"))
 		}
 	} else {
@@ -44,6 +43,15 @@ func GenerateSignRequestString(params interface{}) (string, error) {
 
 		if s.Field(i).Kind() == reflect.String {
 			paramMap[s.Type().Field(i).Tag.Get("json")] = s.Field(i).String()
+		}
+
+		if s.Field(i).Kind() == reflect.Slice {
+			v, ok := s.Field(i).Interface().([]string)
+			if !ok {
+				return "", errors.New("phone numbers assert error")
+			}
+
+			paramMap[s.Type().Field(i).Tag.Get("json")] = strings.Join(v, ",")
 		}
 	}
 

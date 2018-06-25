@@ -2,17 +2,23 @@ package Aliyuncs
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"io"
 	"io/ioutil"
 	"net/http"
+	"reflect"
 )
 
 // DoRequest sends http request
-func DoRequest(method, url string, body []byte) (int, error) {
+func DoRequest(method, url string, body []byte, response interface{}) (int, error) {
 	var reader io.Reader
+	if reflect.ValueOf(response).Kind() != reflect.Ptr {
+		return 400, errors.New("response object should be pointer")
+	}
 	switch method {
 	case "GET", "get":
+
 	case "POST", "post":
 		if len(body) == 0 {
 			return 411, errors.New("Length required: body. ")
@@ -46,6 +52,11 @@ func DoRequest(method, url string, body []byte) (int, error) {
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return resp.StatusCode, errors.New(resp.Status + "," + string(respBody))
+	}
+
+	err = json.Unmarshal(respBody, response)
+	if err != nil {
+		return 500, err
 	}
 
 	return resp.StatusCode, nil

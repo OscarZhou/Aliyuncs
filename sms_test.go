@@ -8,7 +8,7 @@ func TestSms(t *testing.T) {
 	smsConfig := SmsConfig{
 		AccessKeyID:     "",
 		AccessKeySecret: "",
-		PhoneNumbers:    "15000000000",
+		PhoneNumbers:    []string{"15000000000", "15000000001"},
 		SignName:        "云通信(短信签名)",
 		TemplateCode:    "SMS_0000(短信模板ID)",
 		TemplateParam:   `{"code":"1234","product":"ytx"}`,
@@ -20,6 +20,8 @@ func TestSms(t *testing.T) {
 
 	statusCode, err := sms.SendSms()
 	if err != nil {
-		t.Errorf("status code is %d, error is %s\n", statusCode, err)
+		t.Errorf("status code: %d, error: %s\n", statusCode, err.Error())
+		t.Errorf("Aliyun error code: %s, description: %s\n", sms.SmsReturnStatus.Code, sms.SmsReturnStatus.Message)
+		t.Errorf("code description: %s\n", sms.SmsReturnStatus.LookupCode())
 	}
 }

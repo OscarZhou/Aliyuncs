@@ -2,7 +2,7 @@ package Aliyuncs
 
 // SmsConfig stores the setting parameters of the sms API
 type SmsConfig struct {
-	PhoneNumbers    string
+	PhoneNumbers    []string
 	SignName        string
 	TemplateCode    string
 	TemplateParam   string
